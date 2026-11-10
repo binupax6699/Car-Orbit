@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { scene, frameCamera } from './scene.js';
+import { scene, frameCamera, addReflectiveFloor } from './scene.js';
 import { hideLoading } from './loading.js';
 
 /* FILE PATHS */
@@ -35,6 +35,14 @@ export function loadModels() {
 
     car.position.set(-center.x, -box.min.y, -center.z);
     scene.add(car);
+    car.traverse((obj) => {
+    if (!obj.isMesh) return;
+    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+    for (const mat of mats) {
+    if (mat.transparent) mat.depthWrite = false;   // lets lights behind the glass show through
+    }
+  });
+
     frameCamera(Math.max(size.x, size.y, size.z));
     oneDone();
   }, undefined, (err) => {
@@ -44,7 +52,9 @@ export function loadModels() {
 
   /* Platform */
   loader.load(PLATFORM_URL, (gltf) => {
+    const box = new THREE.Box3().setFromObject(gltf.scene);
     scene.add(gltf.scene);
+    addReflectiveFloor(box);
     oneDone();
   }, undefined, (err) => {
     console.error('Platform error:', PLATFORM_URL, err);
