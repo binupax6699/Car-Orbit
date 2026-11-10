@@ -19,8 +19,8 @@ scene.background = new THREE.Color(0x000000);
 /* HEXAGON CEILING LIGHT */
 const HEX_POWER = 20;
 const HEX_RADIUS = 0.5;
-const HEX_COLUMNS = 6;
-const HEX_ROWS = 8;
+const HEX_COLUMNS = 5;
+const HEX_ROWS = 7;
 const HEX_TUBE = 0.07;
 const HEX_HEIGHT = 3;
 const HEX_ANGLE = 0;
