@@ -1,21 +1,20 @@
-/* ===== CAR + PLATFORM ===== */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { scene, frameCamera, addReflectiveFloor } from './scene.js';
 import { hideLoading } from './loading.js';
 
-/* FILE PATHS */
+// FILE PATHS
 const PLATFORM_URL = 'models/platform.glb';
 const CAR_URL = 'cars/BUGATTI_Brouillard.glb';
 
-/* LOADER */
+// LOADER
 const draco = new DRACOLoader();
 draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/');
 const loader = new GLTFLoader();
 loader.setDRACOLoader(draco);
 
-/* HIDE LOADING SCREEN*/
+// HIDE LOADING SCREEN
 let pending = 2;
 
 function oneDone() {
@@ -23,10 +22,10 @@ function oneDone() {
   if (pending === 0) hideLoading();
 }
 
-/* LOAD EVERYTHING */
+// LOAD EVERYTHING
 export function loadModels() {
 
-  /* Car */
+  // Car
   loader.load(CAR_URL, (gltf) => {
     const car = gltf.scene;
     const box = new THREE.Box3().setFromObject(car);
@@ -50,7 +49,7 @@ export function loadModels() {
     oneDone();
   });
 
-  /* Platform */
+  // Platform
   loader.load(PLATFORM_URL, (gltf) => {
     const box = new THREE.Box3().setFromObject(gltf.scene);
     scene.add(gltf.scene);

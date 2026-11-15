@@ -1,5 +1,3 @@
-/* ===== LOADING SCREEN ===== */
-
 const screen = document.getElementById('loading-screen');
 
 export function hideLoading() {

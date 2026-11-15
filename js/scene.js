@@ -1,10 +1,8 @@
-/* ===== SCENE ===== */
-
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 
-/* RENDERER */
+// RENDERER
 const canvas = document.querySelector('#webgl');
 export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
@@ -12,11 +10,11 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 
-/* SCENE */
+// SCENE
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 
-/* HEXAGON CEILING LIGHT */
+// HEXAGON CEILING LIGHT
 const HEX_POWER = 20;
 const HEX_RADIUS = 0.5;
 const HEX_COLUMNS = 5;
@@ -87,10 +85,11 @@ const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(studio).texture;
 scene.add(buildHexLight(3));
 
-/* REFLECTIVE FLOOR */
+// REFLECTIVE FLOOR
 const FLOOR_STRENGTH = 1;
 const FLOOR_TINT = 0x888888;
 const FLOOR_HEIGHT = 0.03;
+const FLOOR_BLUR = 0.001;
 
 export function addReflectiveFloor(box) {
   const size = box.getSize(new THREE.Vector3());
@@ -119,17 +118,29 @@ export function addReflectiveFloor(box) {
   );
   floor.material.needsUpdate = true;
 
+  floor.material.fragmentShader = floor.material.fragmentShader.replace(
+    'vec4 base = texture2DProj( tDiffuse, vUv );',
+    `vec4 base = vec4(0.0);
+     vec2 uv = vUv.xy / vUv.w;
+     for (int x = -2; x <= 2; x++) {
+       for (int y = -2; y <= 2; y++) {
+         base += texture2D(tDiffuse, uv + vec2(float(x), float(y)) * ${FLOOR_BLUR.toFixed(4)});
+       }
+     }
+     base /= 25.0;`
+  );
+
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(center.x, FLOOR_HEIGHT, center.z);
   scene.add(floor);
 }
 
 
-/* CAMERA */
+// CAMERA
 export const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
 camera.position.set(6, 2, 8);
 
-/* CONTROLS */
+// CONTROLS
 export const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
@@ -137,7 +148,7 @@ controls.enablePan = false;
 controls.target.set(0, 0.6, 0);
 controls.update();
 
-/* FIT CAMERA */
+// FIT CAMERA
 let minCameraHeight = 0.25;
 
 export function frameCamera(carSize) {
@@ -153,7 +164,7 @@ export function frameCamera(carSize) {
   controls.update();
 }
 
-/* PER-FRAME CAMERA UPDATE */
+// PER-FRAME CAMERA UPDATE
 export function updateCamera() {
   const dist = camera.position.distanceTo(controls.target);
   const limit = (minCameraHeight - controls.target.y) / dist;
@@ -161,7 +172,7 @@ export function updateCamera() {
   controls.update();
 }
 
-/* RESIZE */
+// RESIZE
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
