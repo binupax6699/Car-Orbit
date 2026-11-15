@@ -15,12 +15,12 @@ export const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 
 // HEXAGON CEILING LIGHT
-const HEX_POWER = 40;
+const HEX_POWER = 80;
 const HEX_RADIUS = 10;
-const HEX_COLUMNS = 10;
-const HEX_ROWS = 10;
+const HEX_COLUMNS = 15;
+const HEX_ROWS = 12.5;
 const HEX_TUBE = 0.07;
-const HEX_HEIGHT = 3;
+const HEX_HEIGHT = 6;
 const HEX_ANGLE = 0;
 
 function buildHexLight(power) {
@@ -87,7 +87,7 @@ scene.add(buildHexLight(3));
 
 // REFLECTIVE FLOOR
 const FLOOR_STRENGTH = 1;
-const FLOOR_TINT = 0x888888;
+const FLOOR_TINT = 0x6e6e6e;
 const FLOOR_HEIGHT = 0.03;
 const FLOOR_BLUR = 0.001;
 
@@ -157,10 +157,10 @@ export function frameCamera(carSize) {
   camera.updateProjectionMatrix();
 
   controls.target.set(0, carSize * 0.12, 0);
-  controls.minDistance = carSize * 0.6;
-  controls.maxDistance = carSize * 4;
-  camera.position.set(carSize * 1.1, carSize * 0.4, carSize * 1.4);
-  minCameraHeight = carSize * 0.05;
+  controls.minDistance = carSize * 0.55;
+  controls.maxDistance = carSize * 3.5;
+  camera.position.set(carSize * 90, carSize * 0.01, carSize * 0);
+  minCameraHeight = carSize * 0.01;
   controls.update();
 }
 
