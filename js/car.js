@@ -38,7 +38,7 @@ export function loadModels() {
     if (!obj.isMesh) return;
     const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
     for (const mat of mats) {
-    if (mat.transparent) mat.depthWrite = false;   // lets lights behind the glass show through
+    if (mat.transparent) mat.depthWrite = false;
     }
   });
 

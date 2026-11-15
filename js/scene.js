@@ -6,7 +6,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 const canvas = document.querySelector('#webgl');
 export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2.5)); // need to add to settings 
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 
@@ -89,12 +89,12 @@ scene.add(buildHexLight(3));
 const FLOOR_STRENGTH = 1;
 const FLOOR_TINT = 0x6e6e6e;
 const FLOOR_HEIGHT = 0.03;
-const FLOOR_BLUR = 0.001;
+const FLOOR_BLUR = 0.002;
 
 export function addReflectiveFloor(box) {
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
-  const quality = Math.min(devicePixelRatio, 1.5);
+  const quality = Math.min(devicePixelRatio, 2.5); // need to add to settings 
 
   const floorSizeMultiplier = 2; 
   const floor = new Reflector(new THREE.PlaneGeometry(size.x * floorSizeMultiplier, size.z * floorSizeMultiplier), {
