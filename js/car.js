@@ -26,6 +26,7 @@ function oneDone() {
 export function loadModels() {
 
   // Car
+  
   loader.load(CAR_URL, (gltf) => {
     const car = gltf.scene;
     const box = new THREE.Box3().setFromObject(car);

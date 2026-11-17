@@ -1,12 +1,16 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 // RENDERER
 const canvas = document.querySelector('#webgl');
 export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2.5)); // need to add to settings 
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); // need to add to settings (PixelRatio)
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 
@@ -88,13 +92,13 @@ scene.add(buildHexLight(3));
 // REFLECTIVE FLOOR
 const FLOOR_STRENGTH = 1;
 const FLOOR_TINT = 0x6e6e6e;
-const FLOOR_HEIGHT = 0.03;
+const FLOOR_HEIGHT = 0.015;
 const FLOOR_BLUR = 0.002;
 
 export function addReflectiveFloor(box) {
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
-  const quality = Math.min(devicePixelRatio, 2.5); // need to add to settings 
+  const quality = Math.min(devicePixelRatio, 1); // need to add to settings (shadow quality)
 
   const floorSizeMultiplier = 2; 
   const floor = new Reflector(new THREE.PlaneGeometry(size.x * floorSizeMultiplier, size.z * floorSizeMultiplier), {
@@ -140,6 +144,27 @@ export function addReflectiveFloor(box) {
 export const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
 camera.position.set(6, 2, 8);
 
+// BLOOM
+const BLOOM_STRENGTH = 0.4;
+const BLOOM_RADIUS = 1;
+const BLOOM_THRESHOLD = 1;
+
+const composerTarget = new THREE.WebGLRenderTarget(innerWidth, innerHeight, {
+  type: THREE.HalfFloatType,
+  samples: 2,
+});
+
+export const composer = new EffectComposer(renderer, composerTarget);
+composer.setSize(innerWidth, innerHeight);
+composer.addPass(new RenderPass(scene, camera));
+
+export const bloom = new UnrealBloomPass(
+  new THREE.Vector2(innerWidth, innerHeight),
+  BLOOM_STRENGTH, BLOOM_RADIUS, BLOOM_THRESHOLD
+);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+
 // CONTROLS
 export const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -149,7 +174,7 @@ controls.target.set(0, 0.6, 0);
 controls.update();
 
 // FIT CAMERA
-let minCameraHeight = 0.25;
+let minCameraHeight = 0.5;
 
 export function frameCamera(carSize) {
   camera.near = carSize / 200;
@@ -159,7 +184,7 @@ export function frameCamera(carSize) {
   controls.target.set(0, carSize * 0.12, 0);
   controls.minDistance = carSize * 0.55;
   controls.maxDistance = carSize * 3.5;
-  camera.position.set(carSize * 90, carSize * 0.01, carSize * 0);
+  camera.position.set(carSize * 5, carSize * 0.01, carSize * 0);
   minCameraHeight = carSize * 0.01;
   controls.update();
 }
@@ -177,4 +202,5 @@ addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  composer.setSize(innerWidth, innerHeight);
 });
