@@ -19,11 +19,11 @@ export const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 
 // HEXAGON CEILING LIGHT
-const HEX_POWER = 80;
-const HEX_RADIUS = 10;
-const HEX_COLUMNS = 15;
-const HEX_ROWS = 12.5;
-const HEX_TUBE = 0.07;
+const HEX_POWER = 30;
+const HEX_RADIUS = 8;
+const HEX_COLUMNS = 5;
+const HEX_ROWS = 4.5;
+const HEX_TUBE = 0.1;
 const HEX_HEIGHT = 6;
 const HEX_ANGLE = 0;
 
@@ -93,13 +93,13 @@ scene.add(buildHexLight(3));
 const FLOOR_STRENGTH = 1;
 const FLOOR_TINT = 0x6e6e6e;
 const FLOOR_HEIGHT = 0.015;
-const FLOOR_BLUR = 0.002;
+const FLOOR_BLUR = 0.0015;
 
 export function addReflectiveFloor(box) {
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
-  const quality = Math.min(devicePixelRatio, 1); // need to add to settings (shadow quality)
-
+  const quality = Math.min(devicePixelRatio, 1);
+  
   const floorSizeMultiplier = 2; 
   const floor = new Reflector(new THREE.PlaneGeometry(size.x * floorSizeMultiplier, size.z * floorSizeMultiplier), {
     textureWidth: Math.round(innerWidth * quality),
@@ -141,11 +141,11 @@ export function addReflectiveFloor(box) {
 
 
 // CAMERA
-export const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
+export const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000); // need to add to settings (FOV)
 camera.position.set(6, 2, 8);
 
 // BLOOM
-const BLOOM_STRENGTH = 0.4;
+const BLOOM_STRENGTH = 0.3;
 const BLOOM_RADIUS = 1;
 const BLOOM_THRESHOLD = 1;
 
