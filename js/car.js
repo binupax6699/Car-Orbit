@@ -6,7 +6,7 @@ import { hideLoading } from './loading.js';
 
 // FILE PATHS
 const PLATFORM_URL = 'models/platform.glb';
-const CAR_URL = 'cars/bugatti css.glb';
+const CAR_URL = 'cars/Ferrari LAferrari.glb';
 
 // LOADER
 const draco = new DRACOLoader();
