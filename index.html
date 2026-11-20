@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Car Orbit</title>
-<link rel="stylesheet" href="style.css">
-<script type="importmap">
-{"imports":{
-"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-"three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-}}
-</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Car Orbit</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <script type="importmap">
+  {"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+
 </head>
 <body>
 
@@ -24,6 +26,46 @@
     <div class="ring"></div>
   </div>
 </div>
+
+<!-- menu -->
+<div class="top-nav-container" id="top-nav">
+
+  <div class="menu-wrapper">
+    <button class="menu-btn" id="menu-btn" type="button" aria-label="Menu" aria-expanded="false">
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </button>
+  </div>
+
+  <div class="menu-actions" id="menu-actions" aria-hidden="true">
+
+    <button class="menu-action" id="fullscreen-btn" type="button" aria-label="Toggle Fullscreen" title="Toggle Fullscreen">
+      <img src="icons/buttons/fullscreen.svg" class="menu-icon default-icon" alt="Fullscreen">
+      <img src="icons/buttons/fullscreen-filled.svg" class="menu-icon pressed-icon" alt="Fullscreen Active">
+    </button>
+
+    <div class="social-btn-wrapper">
+      <button class="menu-action" id="social-btn" type="button" aria-label="Social Accounts" title="My Social">
+        <img src="icons/buttons/social.svg" class="menu-icon default-icon" alt="Social">
+        <img src="icons/buttons/social-filled.svg" class="menu-icon pressed-icon" alt="Close Social">
+      </button>
+    </div>
+
+    <a class="menu-action" id="github-link" href="https://github.com/binupax6699/Car-Orbit" target="_blank" rel="noopener noreferrer" aria-label="GitHub" title="GitHub">
+      <img src="icons/buttons/github.svg" class="menu-icon default-icon" alt="GitHub">
+      <img src="icons/buttons/github-filled.svg" class="menu-icon pressed-icon" alt="GitHub Active">
+    </a>
+
+    <div class="settings-btn-wrapper">
+      <button class="menu-action" id="settings-btn" type="button" aria-label="Settings" title="Settings">
+        <img src="icons/buttons/settings.svg" class="menu-icon default-icon" alt="Settings">
+        <img src="icons/buttons/settings-filled.svg" class="menu-icon pressed-icon" alt="Close Settings">
+      </button>
+    </div>
+  </div>
+</div>
+
 
 <script type="module" src="js/main.js"></script>
 

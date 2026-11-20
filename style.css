@@ -1,6 +1,61 @@
+@font-face {
+    font-family: "F1";
+    src: url("fonts/Doto_Rounded.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "F2";
+    src: url("fonts/cour.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
-  --text: #ffffff;
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+    --font-base: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+    --font-title: "F1", var(--font-base);
+    --font-heading:"F2", var(--font-base);
+    --font-ui:"F2", var(--font-base);
+    --font-names:"F2", var(--font-base);
+    --font-numbers:"F2", var(--font-base);
+
+    --font-loading: monospace, sans-serif;
+
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-bg-hover: rgba(255, 255, 255, 0.108);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --glass-border-hover: rgba(255, 255, 255, 0.32);
+    --glass-blur: blur(4px) saturate(160%);
+    --glass-blurX: blur(8px) saturate(160%);
+
+    --glow-icon: drop-shadow(0 0 2px rgba(255, 255, 255, 0.35));
+    --glow-icon-strong: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+    --glow-button: 0 0 10px rgba(255, 255, 255, 0.376), 0 0 1px rgba(245, 245, 245, 0.152);
+    --glow-dot: 0 0 10px rgba(255, 255, 255, 0.85), 0 0 2px rgba(255, 255, 255, 0.8);
+    --glow-text: 0 0 10px rgba(255, 255, 255, 1), 0 0 20px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.763);
+
+    --text: #ffffff;
+    --text-soft: rgba(255, 255, 255, 0.68);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-faint: rgba(255, 255, 255, 0.35);
+    --line: rgba(255, 255, 255, 0.12);
+
+    --radius-pill: 999px;
+    --radius-card: 24px;
+    --radius-panel: 34px;
+
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --time-fast: 0.2s;
+    --time-base: 0.3s;
+    --time-slow: 0.5s;
+    --time-panel: 0.7s;
+
+    --popup-width: 248px;
 }
 
 /*  BASE*/
@@ -73,3 +128,205 @@ html, body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* MENU */
+
+.top-nav-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    z-index: 200;
+    pointer-events: auto;
+}
+
+.menu-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.menu-btn {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3.5px;
+    overflow: hidden;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    transition: transform var(--time-fast) var(--ease), background var(--time-base) ease, border-color var(--time-base) ease, box-shadow var(--time-base) ease;
+}
+
+.menu-actions {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+}
+
+.menu-btn .bar {
+    position: relative;
+    width: 19px;
+    height: 1.9px;
+    border-radius: 3px;
+    background: #ffffff;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.7), 0 0 5px rgba(209, 209, 209, 0.7);
+    z-index: 100;
+
+}
+
+/* open */
+
+.top-nav-container.menu-open .menu-btn .bar:nth-child(1) {
+    animation: moveToCenterTop var(--time-slow) var(--ease) forwards;
+}
+
+.top-nav-container.menu-open .menu-btn .bar:nth-child(2) {
+    opacity: 0;
+    transition: opacity var(--time-fast) ease;
+}
+
+.top-nav-container.menu-open .menu-btn .bar:nth-child(3) {
+    animation: moveToCenterBottom var(--time-slow) var(--ease) forwards;
+}
+
+/* close */
+
+.top-nav-container:not(.menu-open) .menu-btn .bar:nth-child(1) {
+    animation: moveToCenterTopReverse var(--time-slow) var(--ease) forwards;
+}
+
+.top-nav-container:not(.menu-open) .menu-btn .bar:nth-child(2) {
+    opacity: 1;
+    transition: opacity var(--time-fast) ease var(--time-base);
+}
+
+.top-nav-container:not(.menu-open) .menu-btn .bar:nth-child(3) {
+    animation: moveToCenterBottomReverse var(--time-slow) var(--ease) forwards;
+}
+
+@keyframes moveToCenterTop {
+    0% { top: 0; transform: rotate(0deg); }
+    50% { top: 5px; transform: rotate(0deg); }
+    100% { top: 5px; transform: rotate(-45deg); }
+}
+
+@keyframes moveToCenterTopReverse {
+    0% { top: 5px; transform: rotate(-45deg); }
+    50% { top: 5px; transform: rotate(0deg); }
+    100% { top: 0; transform: rotate(0deg); }
+}
+
+@keyframes moveToCenterBottom {
+    0% { bottom: 0; transform: rotate(0deg); }
+    50% { bottom: 5.9px; transform: rotate(0deg); }
+    100% { bottom: 5.9px; transform: rotate(45deg); }
+}
+
+@keyframes moveToCenterBottomReverse {
+    0% { bottom: 5.9px; transform: rotate(45deg); }
+    50% { bottom: 5.9px; transform: rotate(0deg); }
+    100% { bottom: 0; transform: rotate(0deg); }
+}
+
+/* dock */
+
+.menu-actions {
+    position: relative;
+    padding: 1px 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    border-radius: var(--radius-pill);
+    opacity: 0;
+    visibility: hidden;
+    z-index: 150;
+    pointer-events: none;
+    transform: translateX(-15px);
+    transition: transform var(--time-slow) var(--ease), opacity var(--time-base) ease, visibility var(--time-base) ease;
+}
+
+.top-nav-container.menu-open .menu-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+
+.top-nav-container.menu-open .menu-actions > * {
+    animation: dock-item-in var(--time-slow) var(--ease) backwards;
+    animation-delay: calc(var(--i, 0) * 0.045s + 0.08s);
+}
+
+.menu-actions > :nth-child(1) { --i: 0; }
+.menu-actions > :nth-child(2) { --i: 1; }
+.menu-actions > :nth-child(3) { --i: 2; }
+.menu-actions > :nth-child(4) { --i: 3; }
+
+@keyframes dock-item-in {
+    from { opacity: 0; transform: translateX(-14px) scale(0.75); }
+    to { opacity: 1; transform: none; }
+}
+
+.menu-action {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    overflow: hidden;
+    text-decoration: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+     background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.menu-icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    display: block;
+    filter: var(--glow-icon);
+}
+
+@media (hover: hover) {
+    .menu-action:hover .menu-icon { filter: var(--glow-icon-strong); }
+}
+
+.menu-action .menu-icon {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    transition: opacity 0.15s ease;
+}
+
+.menu-action .default-icon { opacity: 1; }
+
+.menu-action .pressed-icon { opacity: 0; }
+
+.menu-action.is-open .default-icon,
+.menu-action.active .default-icon,
+.menu-action:active .default-icon { opacity: 0; }
+
+.menu-action.is-open .pressed-icon,
+.menu-action.active .pressed-icon,
+.menu-action:active .pressed-icon { opacity: 1; }
