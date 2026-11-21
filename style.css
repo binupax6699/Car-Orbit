@@ -387,8 +387,8 @@ html, body {
     position: absolute;
     bottom: 20px;
     right: 20px;
-    width: min(420px, calc(100% - 40px));
-    height: min(60vh, 380px);
+    width: min(50%, 25%);
+    height: min(95%, 90%);
     padding: 10px;
     display: flex;
     flex-direction: column;
@@ -487,4 +487,9 @@ html, body {
 /*MOBILE */
 
 @media (max-width: 700px) {
+
+.car-panel {
+  width: min(420px, calc(100% - 40px));
+  height: min(50%, 40%);
+}
 }

@@ -95,6 +95,7 @@ const FLOOR_TINT = 0x6e6e6e;
 const FLOOR_HEIGHT = 0.015;
 const FLOOR_BLUR = 0.0015;
 
+export const reflectionHook = { fn: null };
 export function addReflectiveFloor(box) {
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
@@ -111,9 +112,10 @@ export function addReflectiveFloor(box) {
   floor.camera.minDistance = 0.001;
   const originalOnBeforeRender = floor.onBeforeRender;
   floor.onBeforeRender = function (renderer, scene, camera) {
-
-    originalOnBeforeRender.call(this, renderer, scene, camera);
-  };
+  reflectionHook.fn?.(true);
+  originalOnBeforeRender.call(this, renderer, scene, camera);
+  reflectionHook.fn?.(false);
+};
 
   floor.material.transparent = true;
   floor.material.fragmentShader = floor.material.fragmentShader.replace(
@@ -176,16 +178,23 @@ controls.update();
 // FIT CAMERA
 let minCameraHeight = 0.5;
 
-export function frameCamera(carSize) {
+export function frameCamera(carSize, keepView = false) {
   camera.near = carSize / 200;
   camera.far = carSize * 100;
   camera.updateProjectionMatrix();
 
-  controls.target.set(0, carSize * 0.12, 0);
+  const targetY = carSize * 0.12;
   controls.minDistance = carSize * 0.55;
   controls.maxDistance = carSize * 3;
-  camera.position.set(carSize * 3, carSize * 0.01, carSize * 0);
   minCameraHeight = carSize * 0.01;
+
+  if (keepView) {
+    camera.position.y += targetY - controls.target.y;
+    controls.target.y = targetY;
+  } else {
+    controls.target.set(0, targetY, 0);
+    camera.position.set(carSize * 3, carSize * 0.01, 0);
+  }
   controls.update();
 }
 
@@ -203,4 +212,5 @@ addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
   composer.setSize(innerWidth, innerHeight);
+  swapPass.uniforms.resolution.value.set(innerWidth, innerHeight);
 });

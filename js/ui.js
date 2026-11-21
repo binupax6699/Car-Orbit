@@ -1,6 +1,5 @@
 import { cars } from './cars.js';
 import { loadCar } from './car.js';
-import { showLoading, hideLoading } from './loading.js';
 
 const nav = document.getElementById('top-nav');
 const menuBtn = document.getElementById('menu-btn');
@@ -72,10 +71,8 @@ function renderCars(filter = '') {
 async function selectCar(id) {
   if (busy || id === currentId) return;
   busy = true;
-  showLoading();
-  const ok = await loadCar(id);
+  const ok = await loadCar(id, true);
   if (ok) currentId = id;
-  hideLoading();
   busy = false;
   renderCars(carSearch.value);
 }
