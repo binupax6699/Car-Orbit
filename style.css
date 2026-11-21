@@ -77,7 +77,19 @@ html, body {
   display: block;
 }
 
-/* LOADING SCREEN */
+html, body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* LOADING SCREEN (orby :3) */
 #loading-screen {
   position: fixed;
   inset: 0;
@@ -96,37 +108,17 @@ html, body {
   pointer-events: none;
 }
 
-.spinner {
-  position: relative;
-  width: 90px;
-  height: 90px;
-  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+.orby { pointer-events: none; }
+
+.orby-canvas {
+  width: 100%;
+  height: 100%;
+  display: block
 }
 
-.ring {
-  position: absolute;
-  inset: 0;
-  border: 2px solid transparent;
-  border-top-color: rgba(255, 255, 255, 1);
-  border-radius: 50%;
-  animation: spin 1.2s linear infinite;
-}
-
-.ring:nth-child(2) {
-  inset: 12px;
-  border-top-color: rgba(255, 255, 255, 1);
-  animation-duration: 0.9s;
-  animation-direction: reverse;
-}
-
-.ring:nth-child(3) {
-  inset: 24px;
-  border-top-color: rgba(255, 255, 255, 1);
-  animation-duration: 0.7s;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.orby-main {
+  width: 160px;
+  height: 160px;
 }
 
 /* MENU */
@@ -262,6 +254,7 @@ html, body {
     gap: 10px;
     border-radius: var(--radius-pill);
     opacity: 0;
+    rotate: 90px;
     visibility: hidden;
     z-index: 150;
     pointer-events: none;
@@ -414,8 +407,9 @@ html, body {
 }
 
 .car-search input {
-  width: 100%;
+  font-size: 16px;
   height: 28px;
+  width: 100%;
   padding: 0 12px 0 32px;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-pill);
@@ -439,6 +433,7 @@ html, body {
 }
 
 .car-card {
+
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -446,10 +441,9 @@ html, body {
   padding: 6px;
   background: none;
   border: 0;
-  border-radius: 10px;
   color: var(--text-soft);
   font-family: var(--font-names);
-  font-size: 10px;
+  font-size: 11px;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background var(--time-base) ease;
@@ -474,22 +468,94 @@ html, body {
 
 .car-close {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
-  width: 28px;
-  height: 28px;
-  background: none;
-  border: 0;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
+  right: 10px;
+  bottom: 10px;
+  width: 42px;
+  height: 42px;
+}
+
+/* orby loading bubble :3 */
+
+.orby-top {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  margin-left: -32px;
+  z-index: 300;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity var(--time-base) ease, transform var(--time-slow) var(--ease);
+}
+
+.orby-top.show {
+  opacity: 1;
+  transform: none;
+}
+
+.orby-container {
+  position: relative;
+  container-type: inline-size;
+}
+
+.orby-pct {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  user-select: none;
+  font-family: var(--font-numbers);
+  font-size: clamp(11px, 22cqw, 28px);
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.96);
+  text-shadow:0 1px 6px rgba(218, 218, 218, 0.55), 0 0 14px rgba(235, 235, 235, 0.22);
+  -webkit-font-smoothing: antialiased;
+}
+
+.orby-top .orby-pct {
+  font-size: 16px;
+  letter-spacing: 1px;
 }
 
 /*MOBILE */
 
 @media (max-width: 700px) {
 
-.car-panel {
-  width: min(420px, calc(100% - 40px));
-  height: min(50%, 40%);
+.car-search-icon {
+  left: 14px;
+  top: 50%;
 }
+
+.car-search input {
+  font-size: 16px;
+  height: 40px;
+  width: 100%;
+  padding: 0 14px 0 38px;
+}
+
+.car-panel {
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: calc(100% - 16px);
+  height: 36%;
+  padding: 12px 14px 14px;
+  border-radius: 36px;
+}
+
+.car-close {
+  right: 14px;
+  bottom: 14px;
+  border-radius: 50%;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: var(--glass-blurX);
+  -webkit-backdrop-filter: var(--glass-blurX);
+}
+
 }

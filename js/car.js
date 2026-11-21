@@ -4,6 +4,7 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { scene, camera, renderer, frameCamera, addReflectiveFloor, reflectionHook } from './scene.js';
 import { hideLoading } from './loading.js';
 import { cars } from './cars.js';
+import { orbyTop, orbyMain } from './orby.js';
 
 const PLATFORM_URL = 'models/platform.glb';
 
@@ -14,8 +15,12 @@ const WIRE_GLOW = 0.03;
 const BAND = 0.8;
 const EDGE_NOISE = 0.04;
 const DISSOLVE_CELLS = 60;
-const OUT_MS = 5000;
-const IN_MS = 3000;
+const OUT_MS = 2000;
+const IN_MS = 2000;
+
+// loading
+const PRELOAD_AT_LAUNCH = 1;
+const MAX_READY = 6;
 
 // wire cost
 const MOBILE = matchMedia('(pointer: coarse)').matches;
@@ -32,6 +37,7 @@ const loader = new GLTFLoader();
 loader.setDRACOLoader(draco);
 
 let currentCar = null;
+let framed = false;
 
 const fx = {
   p: { value: IDLE },
@@ -216,10 +222,8 @@ async function playIn(car) {
   fx.p.value = IDLE;
 }
 
-function removeCar() {
-  if (!currentCar) return;
-  scene.remove(currentCar);
-  currentCar.traverse((obj) => {
+function disposeCar(car) {
+  car.traverse((obj) => {
     if (!obj.isMesh) return;
     if (obj.userData.isWire) {
       if (obj.geometry.userData.own) obj.geometry.dispose();
@@ -234,10 +238,9 @@ function removeCar() {
       mat.dispose();
     }
   });
-  currentCar = null;
 }
 
-async function uploadTextures(car) {
+async function uploadTextures(car, onProgress) {
   const texs = new Set();
   car.traverse((o) => {
     if (!o.isMesh || o.userData.isWire) return;
@@ -249,8 +252,10 @@ async function uploadTextures(car) {
     }
   });
   let t0 = performance.now();
+  let i = 0;
   for (const tex of texs) {
     renderer.initTexture(tex);
+    onProgress?.(++i / texs.size);
     if (performance.now() - t0 > 6) {
       await nextFrame();
       t0 = performance.now();
@@ -258,11 +263,81 @@ async function uploadTextures(car) {
   }
 }
 
-async function prepareCar(data) {
-  const base = data.file.slice(0, data.file.lastIndexOf('/') + 1);
-  const res = await fetch(data.file);
+async function warmUp(car) {
+  const meshes = [];
+  car.traverse((o) => { if (o.isMesh) meshes.push(o); });
+  const keep = meshes.map((m) => m.frustumCulled);
+  meshes.forEach((m) => { m.frustumCulled = false; });
+  for (const w of car.userData.wires) w.visible = true;
+
+  const y = car.position.y;
+  car.position.y = y - 5000;
+  scene.add(car);
+  await nextFrame();
+  await nextFrame();
+  scene.remove(car);
+  car.position.y = y;
+
+  for (const w of car.userData.wires) w.visible = false;
+  meshes.forEach((m, i) => { m.frustumCulled = keep[i]; });
+}
+
+// download a file and report 0..1
+async function download(url, onProgress) {
+  const res = await fetch(url);
   if (!res.ok) throw new Error('HTTP ' + res.status);
-  const gltf = await loader.parseAsync(await res.arrayBuffer(), base);
+  const total = +res.headers.get('content-length') || 0;
+
+  // no size known, no live progress
+  if (!res.body || !total) {
+    const buf = await res.arrayBuffer();
+    onProgress(1);
+    return buf;
+  }
+
+  const reader = res.body.getReader();
+  const chunks = [];
+  let got = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    onProgress(Math.min(got / total, 1));
+  }
+  const out = new Uint8Array(got);
+  let o = 0;
+  for (const c of chunks) {
+    out.set(c, o);
+    o += c.length;
+  }
+  return out.buffer;
+}
+
+// loading progress (0..1) shown inside the orby
+const progress = new Map();
+let launchIds = null; // ids counted in the launch progress, null after launch
+let swapId = null;    // car the top bubble is showing
+
+function report(id, v) {
+  v = Math.min(1, Math.max(progress.get(id) || 0, v)); // never goes backwards
+  progress.set(id, v);
+  if (id === swapId) orbyTop.setProgress(v);
+  if (launchIds) {
+    let sum = 0;
+    for (const i of launchIds) sum += progress.get(i) || 0;
+    orbyMain.setProgress(sum / launchIds.length);
+  }
+}
+
+async function prepareCar(data) {
+  const id = data.id;
+  const base = data.file.slice(0, data.file.lastIndexOf('/') + 1);
+
+  const buf = await download(data.file, (v) => report(id, v * 0.55));
+  report(id, 0.55);
+  const gltf = await loader.parseAsync(buf, base);
+  report(id, 0.7);
 
   const car = gltf.scene;
   prepareSolid(car);
@@ -287,8 +362,12 @@ async function prepareCar(data) {
     }
   });
 
-  await uploadTextures(car);
-  try { await renderer.compileAsync(car, camera, scene); } catch (e) { /* skip */ }
+  await uploadTextures(car, (v) => report(id, 0.7 + v * 0.15));
+  report(id, 0.85);
+  try { await renderer.compileAsync(car, camera, scene); } catch (e) {}
+  report(id, 0.93);
+  await warmUp(car);
+  report(id, 1);
 
   return {
     car,
@@ -299,63 +378,122 @@ async function prepareCar(data) {
   };
 }
 
-// loads a car
+const prepared = new Map();
+const readyIds = new Set();
+
+function ensure(data) {
+  let p = prepared.get(data.id);
+  if (!p) {
+    p = prepareCar(data);
+    prepared.set(data.id, p);
+    p.then(
+      () => readyIds.add(data.id),
+      () => { prepared.delete(data.id); progress.delete(data.id); }
+    );
+  }
+  return p;
+}
+
+function touch(id) {
+  const p = prepared.get(id);
+  if (!p) return;
+  prepared.delete(id);
+  prepared.set(id, p);
+}
+
+function evict(keepId) {
+  for (const [id, p] of prepared) {
+    if (prepared.size <= MAX_READY) break;
+    if (id === keepId) continue;
+    prepared.delete(id);
+    readyIds.delete(id);
+    progress.delete(id);
+    p.then((r) => disposeCar(r.car)).catch(() => {});
+  }
+}
+
 export async function loadCar(id, animate = false) {
   const data = cars.find((c) => c.id === id);
   if (!data) return false;
 
   const old = animate ? currentCar : null;
 
-  const preparing = prepareCar(data).then((r) => ({ r }), (err) => ({ err }));
+  // show the bubble only when the car is not ready yet (small delay so it never flashes)
+  const needsLoad = animate && !readyIds.has(id);
+  const orbTimer = needsLoad ? setTimeout(() => {
+    swapId = id;
+    orbyTop.show();
+    orbyTop.setProgress(progress.get(id) || 0);
+  }, 200) : 0;
+
+  // usually already prepared, if not it prepares while the old car sweeps out
+  const preparing = ensure(data).then((r) => ({ r }), (err) => ({ err }));
 
   if (old) await playOut(old);
 
   const { r, err } = await preparing;
+  clearTimeout(orbTimer);
+  if (needsLoad) {
+    swapId = null;
+    orbyTop.setProgress(1);
+    orbyTop.hide();
+  }
   if (err) {
     console.error('Car error:', data.file, err);
-    if (old) await playIn(old);
+    if (old) await playIn(old); // load failed, bring the old car back
     return false;
   }
 
   const { car, maxSize, zFront, zBack, cell } = r;
+  touch(id);
 
   fx.z.value.set(zFront, zBack);
   fx.cell.value = cell;
 
-  removeCar();
-
-  fx.mode.value = 1;
+  if (currentCar) scene.remove(currentCar);
+  fx.mode.value = old ? 1 : 0;
   fx.p.value = IDLE;
   scene.add(car);
   currentCar = car;
-  showWires(car, true);
-  frameCamera(maxSize, !!old);
-  await nextFrame();
-  await nextFrame();
-  showWires(car, false);
 
-  if (old) {
-    await playIn(car);
-  } else {
-    fx.mode.value = 0;
-    fx.p.value = IDLE;
+  if (!framed) {
+    frameCamera(maxSize);
+    framed = true;
   }
+
+  if (old) await playIn(car);
+  evict(id);
   return true;
 }
 
-export function loadModels() {
-  let pending = 2;
-  const oneDone = () => { if (--pending === 0) hideLoading(); };
+export async function loadModels() {
+  const n = Math.min(PRELOAD_AT_LAUNCH, cars.length);
+  launchIds = ['platform', ...cars.slice(0, n).map((c) => c.id)];
 
-  loadCar(cars[0].id).then(oneDone);
-
-  loader.load(PLATFORM_URL, (gltf) => {
-    const box = new THREE.Box3().setFromObject(gltf.scene);
-    scene.add(gltf.scene);
-    addReflectiveFloor(box);
-    oneDone();
-  }, undefined, (err) => {
-    console.error('Platform error:', PLATFORM_URL, err);
-    oneDone();
+  const platform = new Promise((resolve) => {
+    loader.load(PLATFORM_URL, (gltf) => {
+      const box = new THREE.Box3().setFromObject(gltf.scene);
+      scene.add(gltf.scene);
+      addReflectiveFloor(box);
+      report('platform', 1);
+      resolve();
+    }, (e) => {
+      if (e.total) report('platform', (e.loaded / e.total) * 0.95);
+    }, (err) => {
+      console.error('Platform error:', PLATFORM_URL, err);
+      report('platform', 1);
+      resolve();
+    });
   });
+
+  await Promise.all([loadCar(cars[0].id), platform]);
+
+  for (let i = 1; i < n; i++) {
+    try { await ensure(cars[i]); }
+    catch (e) { console.error('Preload error:', cars[i].file, e); }
+  }
+
+  launchIds = null;
+  orbyMain.setProgress(1);
+  hideLoading();
 }
