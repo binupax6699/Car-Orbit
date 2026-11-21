@@ -282,13 +282,11 @@ async function warmUp(car) {
   meshes.forEach((m, i) => { m.frustumCulled = keep[i]; });
 }
 
-// download a file and report 0..1
 async function download(url, onProgress) {
   const res = await fetch(url);
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const total = +res.headers.get('content-length') || 0;
 
-  // no size known, no live progress
   if (!res.body || !total) {
     const buf = await res.arrayBuffer();
     onProgress(1);
@@ -314,13 +312,12 @@ async function download(url, onProgress) {
   return out.buffer;
 }
 
-// loading progress (0..1) shown inside the orby
 const progress = new Map();
-let launchIds = null; // ids counted in the launch progress, null after launch
-let swapId = null;    // car the top bubble is showing
+let launchIds = null;
+let swapId = null;
 
 function report(id, v) {
-  v = Math.min(1, Math.max(progress.get(id) || 0, v)); // never goes backwards
+  v = Math.min(1, Math.max(progress.get(id) || 0, v));
   progress.set(id, v);
   if (id === swapId) orbyTop.setProgress(v);
   if (launchIds) {
@@ -418,7 +415,6 @@ export async function loadCar(id, animate = false) {
 
   const old = animate ? currentCar : null;
 
-  // show the bubble only when the car is not ready yet (small delay so it never flashes)
   const needsLoad = animate && !readyIds.has(id);
   const orbTimer = needsLoad ? setTimeout(() => {
     swapId = id;
@@ -426,7 +422,6 @@ export async function loadCar(id, animate = false) {
     orbyTop.setProgress(progress.get(id) || 0);
   }, 200) : 0;
 
-  // usually already prepared, if not it prepares while the old car sweeps out
   const preparing = ensure(data).then((r) => ({ r }), (err) => ({ err }));
 
   if (old) await playOut(old);
@@ -440,7 +435,7 @@ export async function loadCar(id, animate = false) {
   }
   if (err) {
     console.error('Car error:', data.file, err);
-    if (old) await playIn(old); // load failed, bring the old car back
+    if (old) await playIn(old);
     return false;
   }
 
