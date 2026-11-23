@@ -27,6 +27,9 @@ const MOBILE = matchMedia('(pointer: coarse)').matches;
 const WIRE_TRI_BUDGET = MOBILE ? 150000 : 200000;
 const WIRE_IN_REFLECTION = true;
 
+// parts that can do stuff
+export const PART_NAMES = ['DoorL', 'DoorR', 'HoodF', 'HoodB'];
+
 const IDLE = -0.1;
 const P_START = -0.05;
 const P_END = 1 + BAND + 0.05;
@@ -38,6 +41,10 @@ loader.setDRACOLoader(draco);
 
 let currentCar = null;
 let framed = false;
+let swapping = false;
+
+export function getCurrentCar() { return currentCar; }
+export function isSwapping() { return swapping; }
 
 const fx = {
   p: { value: IDLE },
@@ -146,7 +153,7 @@ function lightGeometry(geo, step) {
     for (let k = 0; k < 3; k++) out[i * 3 + k] = src ? src[t + k] : t + k;
   }
   const g = new THREE.BufferGeometry();
-  g.setAttribute('position', pos); // shares the car's vertex data
+  g.setAttribute('position', pos);
   g.setIndex(new THREE.BufferAttribute(out, 1));
   g.userData.own = true;
   return g;
@@ -169,6 +176,7 @@ function attachWires(car) {
     w.userData.isWire = true;
     w.frustumCulled = false;
     w.renderOrder = 5;
+    w.raycast = () => {};
     w.visible = false;
     m.add(w);
     wires.push(w);
@@ -312,6 +320,72 @@ async function download(url, onProgress) {
   return out.buffer;
 }
 
+// one open/close parts
+function buildParts(car, animations) {
+  const byPart = {};
+  for (const clip of animations) {
+    for (const track of clip.tracks) {
+      const node = track.name.split('.')[0];
+      if (!PART_NAMES.includes(node)) continue;
+      (byPart[node] ||= []).push(track);
+    }
+  }
+
+  const names = Object.keys(byPart);
+  if (!names.length) {
+    console.warn('No part animations found. Clips:', animations.map((a) => a.name));
+    return;
+  }
+
+  const mixer = new THREE.AnimationMixer(car);
+  const parts = {};
+  for (const name of names) {
+    const clip = new THREE.AnimationClip(name + '_open', -1, byPart[name]);
+    const action = mixer.clipAction(clip);
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+    parts[name] = { action, open: false };
+  }
+  car.userData.mixer = mixer;
+  car.userData.parts = parts;
+}
+
+function setPartOpen(part, open) {
+  part.open = open;
+  const a = part.action;
+  a.enabled = true;
+  a.paused = false;
+  a.timeScale = open ? 1 : -1;
+  a.play();
+}
+
+export function togglePart(name) {
+  if (!currentCar || swapping) return;
+  const part = currentCar.userData.parts?.[name];
+  if (!part) {
+    console.warn('No animation for', name);
+    return;
+  }
+  setPartOpen(part, !part.open);
+}
+
+function closeParts(car) {
+  for (const p of Object.values(car.userData.parts || {})) {
+    if (p.open) setPartOpen(p, false);
+  }
+}
+
+function resetParts(car) {
+  for (const p of Object.values(car.userData.parts || {})) {
+    p.action.stop();
+    p.open = false;
+  }
+}
+
+export function updateCarAnimations(dt) {
+  currentCar?.userData.mixer?.update(dt);
+}
+
 const progress = new Map();
 let launchIds = null;
 let swapId = null;
@@ -337,6 +411,7 @@ async function prepareCar(data) {
   report(id, 0.7);
 
   const car = gltf.scene;
+  buildParts(car, gltf.animations);
   prepareSolid(car);
 
   const box = new THREE.Box3().setFromObject(car);
@@ -414,6 +489,10 @@ export async function loadCar(id, animate = false) {
   if (!data) return false;
 
   const old = animate ? currentCar : null;
+  if (old) {
+    swapping = true; // taps are ignored during a swap
+    closeParts(old); // open doors close while the old car leaves
+  }
 
   const needsLoad = animate && !readyIds.has(id);
   const orbTimer = needsLoad ? setTimeout(() => {
@@ -424,7 +503,10 @@ export async function loadCar(id, animate = false) {
 
   const preparing = ensure(data).then((r) => ({ r }), (err) => ({ err }));
 
-  if (old) await playOut(old);
+  if (old) {
+    await playOut(old);
+    resetParts(old);
+  }
 
   const { r, err } = await preparing;
   clearTimeout(orbTimer);
@@ -435,7 +517,7 @@ export async function loadCar(id, animate = false) {
   }
   if (err) {
     console.error('Car error:', data.file, err);
-    if (old) await playIn(old);
+    if (old) { await playIn(old); swapping = false; }
     return false;
   }
 
@@ -456,7 +538,7 @@ export async function loadCar(id, animate = false) {
     framed = true;
   }
 
-  if (old) await playIn(car);
+  if (old) { await playIn(car); swapping = false; }
   evict(id);
   return true;
 }

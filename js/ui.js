@@ -71,10 +71,17 @@ function renderCars(filter = '') {
 async function selectCar(id) {
   if (busy || id === currentId) return;
   busy = true;
-  const ok = await loadCar(id, true);
-  if (ok) currentId = id;
-  busy = false;
+  
+  const prev = currentId;
+  currentId = id;
   renderCars(carSearch.value);
+
+  const ok = await loadCar(id, true);
+  if (!ok) {
+    currentId = prev;
+    renderCars(carSearch.value);
+  }
+  busy = false;
 }
 
 carSearch.addEventListener('input', () => renderCars(carSearch.value));
