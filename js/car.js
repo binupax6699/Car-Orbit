@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { scene, camera, renderer, frameCamera, addReflectiveFloor, reflectionHook } from './scene.js';
+import { scene, camera, renderer, frameCamera, addReflectiveFloor, reflectionHook, motionHook } from './scene.js';
 import { hideLoading } from './loading.js';
 import { cars } from './cars.js';
 import { orbyTop, orbyMain } from './orby.js';
@@ -28,7 +28,7 @@ const WIRE_TRI_BUDGET = MOBILE ? 150000 : 200000;
 const WIRE_IN_REFLECTION = true;
 
 // parts that can do stuff
-export const PART_NAMES = ['DoorL', 'DoorR', 'HoodF', 'HoodB'];
+export const PART_NAMES = ['DoorL', 'DoorR', 'HoodF', 'HoodB', 'Arow'];
 
 const IDLE = -0.1;
 const P_START = -0.05;
@@ -320,16 +320,42 @@ async function download(url, onProgress) {
   return out.buffer;
 }
 
-// one open/close parts
+// open/close parts
 function buildParts(car, animations) {
-  const byPart = {};
-  for (const clip of animations) {
+    const byPart = {};
+    for (const clip of animations) {
     for (const track of clip.tracks) {
-      const node = track.name.split('.')[0];
-      if (!PART_NAMES.includes(node)) continue;
-      (byPart[node] ||= []).push(track);
+      const raw = track.name.split('.')[0];
+      const node = raw.replace(/\d+$/, '');
+    if (!PART_NAMES.includes(node)) continue;
+    (byPart[node] ||= []).push(track);
+    (car.userData.animNodes ||= []).push(raw);
     }
   }
+
+//motion blur
+function motionLists(car) {
+  if (car.userData.meshes) return;
+  const meshes = [];
+  car.traverse((o) => { if (o.isMesh && !o.userData.isWire) meshes.push(o); });
+  const movers = new Set();
+  for (const name of car.userData.animNodes || []) {
+    car.getObjectByName(name)?.traverse((o) => {
+      if (o.isMesh && !o.userData.isWire) movers.add(o);
+    });
+  }
+  car.userData.meshes = meshes;
+  car.userData.movers = movers;
+}
+
+motionHook.get = () => {
+  const car = currentCar;
+  const parts = car?.userData.parts;
+  if (!parts) return null;
+  if (!Object.values(parts).some((p) => p.action.isRunning())) return null;
+  motionLists(car);
+  return car;
+};
 
   const names = Object.keys(byPart);
   if (!names.length) {
