@@ -28,7 +28,7 @@ const WIRE_TRI_BUDGET = MOBILE ? 150000 : 200000;
 const WIRE_IN_REFLECTION = true;
 
 // parts that can do stuff
-export const PART_NAMES = ['DoorL', 'DoorR', 'HoodF', 'HoodB', 'Arow'];
+export const PART_NAMES = ['DoorL', 'DoorR', 'HoodF', 'HoodB', 'Arow', 'Roof'];
 
 const IDLE = -0.1;
 const P_START = -0.05;

@@ -11,7 +11,7 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 const canvas = document.querySelector('#webgl');
 export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); // need to add to settings (PixelRatio)
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); // need to add to settings (PixelRatio)
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
 
@@ -410,9 +410,9 @@ composer.addPass(new OutputPass());
 // CONTROLS
 export const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.05;
+controls.dampingFactor = 0.08;
 controls.enablePan = false;
-controls.target.set(0, 0.6, 0);
+controls.target.set(0, 0.1, 0);
 controls.update();
 
 // FIT CAMERA
